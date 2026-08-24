@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
   Monitor, Play, RotateCcw, Wifi, WifiOff, Trash2, Loader2, AlertCircle,
-  CheckCircle, XCircle, Terminal, Logs, Settings, ChevronLeft
+  CheckCircle, XCircle, Terminal, FileText, Settings, ChevronLeft
 } from 'lucide-react'
 import { useRDPInstance, useCreateRDP, useRDPTunnel, useChangeRDPTunnel, useRestartRDPTunnel, useRDPAction, useRDPLogs } from '@/hooks/useApi'
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Alert, Modal, Input } from '@/components/ui'
@@ -222,7 +222,7 @@ export function RDPPage() {
                   Change Provider
                 </Button>
                 <Button variant="secondary" onClick={() => { setShowLogs(true); }}>
-                  <Logs className="h-4 w-4 mr-2" />
+                  <FileText className="h-4 w-4 mr-2" />
                   View Logs
                 </Button>
                 <Button variant="danger" onClick={handleStop}>
