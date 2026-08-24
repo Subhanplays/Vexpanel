@@ -159,8 +159,9 @@ export function Sidebar() {
                 Logout
               </DropdownItem>
             </DropdownMenu>
-          )}
+          </div>
         )}
+
       </aside>
 
       {mobileOpen && (
