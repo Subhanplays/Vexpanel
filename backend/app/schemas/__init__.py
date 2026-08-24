@@ -473,6 +473,12 @@ class PaginatedResponse(BaseModel):
     total_pages: int
 
 
+class VPSActionResponse(BaseModel):
+    success: bool
+    message: str
+    job_id: Optional[str] = None
+
+
 class SetupRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=12, max_length=128)
