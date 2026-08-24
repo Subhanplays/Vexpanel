@@ -14,11 +14,7 @@ __pycache__
 *.bak
 Dockerfile
 docker-compose*.yml
-nginx/
-certbot/
 tests/
-frontend/
-migrations/
 *.sh
 *.ps1
 *.bat
