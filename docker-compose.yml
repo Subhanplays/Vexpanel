@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vexpanel-postgres
+    environment:
+      POSTGRES_DB: vexpanel
+      POSTGRES_USER: vexpanel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vexpanel -d vexpanel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vexpanel-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: vexpanel-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vexpanel-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vexpanel-backend
+    environment:
+      DATABASE_URL: postgresql://vexpanel:${POSTGRES_PASSWORD:-change_me}@postgres:5432/vexpanel
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      DEBUG: ${DEBUG:-false}
+      VPS_PROVIDER: ${VPS_PROVIDER:-custom}
+      PINGGY_TOKEN: ${PINGGY_TOKEN:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - vexpanel-volumes:/var/lib/docker/volumes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vexpanel-network
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vexpanel-worker
+    command: python -m app.jobs.worker
+    environment:
+      DATABASE_URL: postgresql://vexpanel:${POSTGRES_PASSWORD:-change_me}@postgres:5432/vexpanel
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      DEBUG: ${DEBUG:-false}
+      VPS_PROVIDER: ${VPS_PROVIDER:-custom}
+      PINGGY_TOKEN: ${PINGGY_TOKEN:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - vexpanel-volumes:/var/lib/docker/volumes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vexpanel-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vexpanel-frontend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - vexpanel-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: vexpanel-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - vexpanel-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  vexpanel-volumes:
+
+networks:
+  vexpanel-network:
+    driver: bridge
