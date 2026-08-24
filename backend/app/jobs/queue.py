@@ -155,12 +155,12 @@ async def handle_vps_create(job: Job, db: Session) -> Dict[str, Any]:
     vps.ipv6 = vps_info.ipv6
     vps.ssh_port = vps_info.ssh_port
     vps.additional_ports = vps_info.additional_ports
-    vps.container_id = vps_info.metadata.get("container_id")
-    vps.image_id = vps_info.metadata.get("image_id")
+    vps.container_id = vps_info.meta_data.get("container_id")
+    vps.image_id = vps_info.meta_data.get("image_id")
     vps.uptime_start = datetime.utcnow()
 
-    if vps_info.metadata:
-        vps.root_password = vps_info.metadata.get("root_password")
+    if vps_info.meta_data:
+        vps.root_password = vps_info.meta_data.get("root_password")
 
     return {"provider_id": vps_info.provider_id, "vps_id": vps_info.vps_id}
 

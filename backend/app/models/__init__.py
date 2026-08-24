@@ -195,7 +195,7 @@ class VPSInstance(Base):
     last_restart = Column(DateTime, nullable=True)
 
     tags = Column(JSON, default=list)
-    metadata = Column(JSON, default=dict)
+    meta_data = Column(JSON, default=dict)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

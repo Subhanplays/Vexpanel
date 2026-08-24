@@ -333,7 +333,7 @@ CMD ["/sbin/init"]
             await asyncio.sleep(5)
             new_container.reload()
 
-            root_password = vps_info.metadata.get('root_password') if vps_info.metadata else None
+            root_password = vps_info.meta_data.get('root_password') if vps_info.meta_data else None
             if not root_password:
                 root_password = self._generate_password()
 
@@ -492,7 +492,7 @@ CMD ["/sbin/init"]
 
             cpuset = f"0-{vps_info.cpu-1}" if vps_info.cpu > 1 else "0"
             volume_name = f"vexpanel-{vps_info.vps_id}"
-            image_id = vps_info.metadata.get('image_id') if vps_info.metadata else settings.DEFAULT_OS_IMAGE
+            image_id = vps_info.meta_data.get('image_id') if vps_info.meta_data else settings.DEFAULT_OS_IMAGE
 
             new_container = await self._run_sync(
                 client.containers.run,
@@ -515,7 +515,7 @@ CMD ["/sbin/init"]
             await asyncio.sleep(5)
             new_container.reload()
 
-            root_password = vps_info.metadata.get('root_password') if vps_info.metadata else None
+            root_password = vps_info.meta_data.get('root_password') if vps_info.meta_data else None
             await self._setup_container(new_container.id, vps_info.ram, vps_info.vps_id, vps_info.ssh_port, root_password or self._generate_password())
 
             return True
@@ -543,7 +543,7 @@ CMD ["/sbin/init"]
 
             cpuset = f"0-{vps_info.cpu-1}" if vps_info.cpu > 1 else "0"
             volume_name = f"vexpanel-{vps_info.vps_id}"
-            image_id = vps_info.metadata.get('image_id') if vps_info.metadata else settings.DEFAULT_OS_IMAGE
+            image_id = vps_info.meta_data.get('image_id') if vps_info.meta_data else settings.DEFAULT_OS_IMAGE
 
             new_container = await self._run_sync(
                 client.containers.run,
@@ -566,7 +566,7 @@ CMD ["/sbin/init"]
             await asyncio.sleep(5)
             new_container.reload()
 
-            root_password = vps_info.metadata.get('root_password') if vps_info.metadata else None
+            root_password = vps_info.meta_data.get('root_password') if vps_info.meta_data else None
             await self._setup_container(new_container.id, vps_info.ram, vps_info.vps_id, vps_info.ssh_port, root_password or self._generate_password())
 
             return True
