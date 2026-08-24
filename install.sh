@@ -463,13 +463,51 @@ start_backend_dev() {
         sed -i "s|POSTGRES_PASSWORD:-change_me|POSTGRES_PASSWORD:-$PG_PASSWORD|" "$ENV_FILE"
     fi
     
+    # Source .env to get password
+    set -a
+    source "$ENV_FILE"
+    set +a
+    
     # Check if PostgreSQL and Redis are running (try Docker first)
     print_info "Checking for PostgreSQL and Redis..."
     if ! docker-compose ps postgres | grep -q "Up"; then
         print_info "Starting PostgreSQL and Redis via Docker..."
         docker-compose up -d postgres redis
-        sleep 5
     fi
+    
+    # Wait for PostgreSQL to be ready
+    print_info "Waiting for PostgreSQL to be ready..."
+    local max_attempts=30
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if docker-compose exec -T postgres pg_isready -U vexpanel -d vexpanel >/dev/null 2>&1; then
+            print_success "PostgreSQL is ready"
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 2
+    done
+    
+    if [ $attempt -eq $max_attempts ]; then
+        print_error "PostgreSQL did not become ready in time"
+        return 1
+    fi
+    
+    # Wait for Redis
+    print_info "Waiting for Redis to be ready..."
+    attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        if docker-compose exec -T redis redis-cli ping >/dev/null 2>&1; then
+            print_success "Redis is ready"
+            break
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+    done
+    
+    # Override DATABASE_URL for local development (connect to mapped port on localhost)
+    export DATABASE_URL="postgresql://vexpanel:${POSTGRES_PASSWORD:-change_me}@localhost:5432/vexpanel"
+    export REDIS_URL="redis://localhost:6379/0"
     
     cd "$PROJECT_DIR/backend"
     
