@@ -486,7 +486,7 @@ start_backend_dev() {
     
     # Run migrations
     print_info "Running database migrations..."
-    alembic upgrade head
+    alembic -c "$PROJECT_DIR/migrations/alembic.ini" upgrade head
     
     print_success "Backend ready! Starting server with hot reload..."
     print_info "API will be available at: http://localhost:8000"
