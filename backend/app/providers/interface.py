@@ -15,6 +15,13 @@ class VPSPowerState(str, Enum):
 
 
 @dataclass
+class VPSPortMapping:
+    host_port: int
+    container_port: int
+    protocol: str = "tcp"
+
+
+@dataclass
 class VPSConfig:
     cpu: int
     ram: int
