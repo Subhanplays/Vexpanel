@@ -409,33 +409,113 @@ do_restart() {
 # Start services
 do_start() {
     echo -e "${CYAN}=== Start Services ===${NC}"
-    echo "1) Start Backend (API + Worker)"
-    echo "2) Start Frontend"
-    echo "3) Start All Services"
-    echo "4) Back to main menu"
-    read -p "Select option [1-4]: " choice
+    echo -e "  ${YELLOW}Docker Mode:${NC}"
+    echo "  1) Start Backend (API + Worker) - Docker"
+    echo "  2) Start Frontend - Docker"
+    echo "  3) Start All Services - Docker"
+    echo -e "  ${YELLOW}Development Mode:${NC}"
+    echo "  4) Start Backend (API) - Dev (uvicorn --reload)"
+    echo "  5) Start Frontend - Dev (npm run dev)"
+    echo "  6) Back to main menu"
+    read -p "Select option [1-6]: " choice
     
     cd "$PROJECT_DIR"
     
     case $choice in
         1)
-            print_info "Starting backend services..."
+            print_info "Starting backend services (Docker)..."
             docker-compose up -d postgres redis backend worker
             print_success "Backend started"
             ;;
         2)
-            print_info "Starting frontend..."
+            print_info "Starting frontend (Docker)..."
             docker-compose up -d frontend nginx
             print_success "Frontend started"
             ;;
         3)
-            print_info "Starting all services..."
+            print_info "Starting all services (Docker)..."
             docker-compose up -d
             print_success "All services started"
             ;;
-        4) return ;;
+        4)
+            start_backend_dev
+            ;;
+        5)
+            start_frontend_dev
+            ;;
+        6) return ;;
         *) print_error "Invalid option" ;;
     esac
+}
+
+# Development mode: Start Backend
+start_backend_dev() {
+    print_info "Starting backend in development mode..."
+    
+    # Check if .env exists
+    if [ ! -f "$ENV_FILE" ]; then
+        print_warning "No .env file found. Creating from template..."
+        cp "$ENV_EXAMPLE" "$ENV_FILE"
+        SECRET_KEY=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)
+        sed -i "s|SECRET_KEY=.*|SECRET_KEY=$SECRET_KEY|" "$ENV_FILE"
+        PG_PASSWORD=$(openssl rand -base64 16 2>/dev/null || head -c 16 /dev/urandom | base64)
+        sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$PG_PASSWORD|" "$ENV_FILE"
+        sed -i "s|POSTGRES_PASSWORD:-change_me|POSTGRES_PASSWORD:-$PG_PASSWORD|" "$ENV_FILE"
+    fi
+    
+    # Check if PostgreSQL and Redis are running (try Docker first)
+    print_info "Checking for PostgreSQL and Redis..."
+    if ! docker-compose ps postgres | grep -q "Up"; then
+        print_info "Starting PostgreSQL and Redis via Docker..."
+        docker-compose up -d postgres redis
+        sleep 5
+    fi
+    
+    cd "$PROJECT_DIR/backend"
+    
+    # Check if virtual environment exists
+    if [ ! -d "venv" ]; then
+        print_info "Creating virtual environment..."
+        python3 -m venv venv
+    fi
+    
+    # Activate venv and install dependencies
+    print_info "Installing/updating dependencies..."
+    source venv/bin/activate
+    pip install -r requirements.txt
+    
+    # Run migrations
+    print_info "Running database migrations..."
+    alembic upgrade head
+    
+    print_success "Backend ready! Starting server with hot reload..."
+    print_info "API will be available at: http://localhost:8000"
+    print_info "API docs at: http://localhost:8000/docs"
+    print_warning "Press Ctrl+C to stop"
+    
+    # Start uvicorn with reload
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+}
+
+# Development mode: Start Frontend
+start_frontend_dev() {
+    print_info "Starting frontend in development mode..."
+    
+    cd "$PROJECT_DIR/frontend"
+    
+    # Install dependencies if node_modules doesn't exist
+    if [ ! -d "node_modules" ]; then
+        print_info "Installing dependencies..."
+        npm install
+    fi
+    
+    print_success "Frontend ready! Starting Vite dev server..."
+    print_info "Frontend will be available at: http://localhost:5173"
+    print_info "API proxy configured to: http://localhost:8000"
+    print_warning "Press Ctrl+C to stop"
+    
+    # Start Vite dev server
+    npm run dev
 }
 
 # Stop services
@@ -485,16 +565,16 @@ do_status() {
 show_menu() {
     show_banner
     echo -e "${CYAN}=== VexPanel Management Menu ===${NC}"
-    echo -e "  ${GREEN}1)${NC} Install VexPanel"
+    echo -e "  ${GREEN}1)${NC} Install VexPanel (Docker)"
     echo -e "  ${GREEN}2)${NC} Uninstall VexPanel"
     echo -e "  ${GREEN}3)${NC} Backup VexPanel"
     echo -e "  ${GREEN}4)${NC} Restore from Backup"
     echo -e "  ${GREEN}5)${NC} VPS Manager"
-    echo -e "  ${GREEN}6)${NC} Restart Services"
-    echo -e "  ${GREEN}7)${NC} Start Services (Backend/Frontend)"
-    echo -e "  ${GREEN}8)${NC} Stop All Services"
-    echo -e "  ${GREEN}9)${NC} View Logs"
-    echo -e "  ${GREEN}10)${NC} Show Status"
+    echo -e "  ${GREEN}6)${NC} Restart Services (Docker)"
+    echo -e "  ${GREEN}7)${NC} Start Services (Docker/Dev)"
+    echo -e "  ${GREEN}8)${NC} Stop All Services (Docker)"
+    echo -e "  ${GREEN}9)${NC} View Logs (Docker)"
+    echo -e "  ${GREEN}10)${NC} Show Status (Docker)"
     echo -e "  ${GREEN}11)${NC} Edit Environment (.env)"
     echo -e "  ${GREEN}12)${NC} Exit"
     echo ""
