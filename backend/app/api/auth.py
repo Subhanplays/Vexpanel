@@ -16,6 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/setup", response_model=SetupResponse)
+@router.post("/setup/", response_model=SetupResponse, include_in_schema=False)
 async def setup_super_admin(request: SetupRequest, db: Session = Depends(get_db)):
     existing_admin = db.query(User).filter(User.role == UserRole.SUPER_ADMIN).first()
     if existing_admin:
@@ -38,6 +39,7 @@ async def setup_super_admin(request: SetupRequest, db: Session = Depends(get_db)
 
 
 @router.post("/login", response_model=Token)
+@router.post("/login/", response_model=Token, include_in_schema=False)
 async def login(username: str, password: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if not user or not verify_password(password, user.hashed_password):
@@ -58,6 +60,7 @@ async def login(username: str, password: str, db: Session = Depends(get_db)):
 
 
 @router.post("/register", response_model=UserResponse)
+@router.post("/register/", response_model=UserResponse, include_in_schema=False)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.username == user_data.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
