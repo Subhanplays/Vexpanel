@@ -146,7 +146,7 @@ export function AdminUsersPage() {
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" variant="danger">
+                          <Button variant="danger" size="sm">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

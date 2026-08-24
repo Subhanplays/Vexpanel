@@ -301,7 +301,7 @@ export function VPSDetailPage() {
                       <div className="flex items-center gap-4 text-sm">
                         <span className="font-mono text-vex-text">{port.host_port}:{port.container_port}/{port.protocol}</span>
                       </div>
-                      <Button variant="ghost" size="sm" variant="danger" onClick={() => removePort(port.host_port)}>
+                      <Button variant="danger" size="sm" onClick={() => removePort(port.host_port)}>
                         <Minus className="h-4 w-4" />
                       </Button>
                     </div>
